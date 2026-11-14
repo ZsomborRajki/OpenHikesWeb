@@ -17,7 +17,9 @@ const COORDINATE_FRACTION_DIGITS = 4;
 
 /** "850 m" below a kilometer, "12.4 km" above. */
 export function formatDistance(meters: number, locale?: string): string {
-	if (meters < METERS_PER_KILOMETER) return formatUnit(Math.round(meters), 'meter', 0, locale);
+	// The unit is chosen by the figure that is written, so 999.6 m is "1 km" and never "1,000 m".
+	const wholeMeters = Math.round(meters);
+	if (wholeMeters < METERS_PER_KILOMETER) return formatUnit(wholeMeters, 'meter', 0, locale);
 	const kilometers = meters / METERS_PER_KILOMETER;
 	return formatUnit(kilometers, 'kilometer', kilometers < WHOLE_KILOMETERS_FROM ? 1 : 0, locale);
 }
