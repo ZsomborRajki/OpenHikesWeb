@@ -67,7 +67,9 @@ const FORBIDDEN = {
 		message: 'Only a component or a route draws a component.'
 	},
 	climbing: {
-		regex: '^\\.\\./\\.\\./',
+		// Two steps up leave any folder, and so does one step up and into a
+		// folder by name: `../trails/` from the root of `planner`.
+		regex: `^\\.\\./(\\.\\./|(${Object.keys(FOLDER_DEPENDENCIES).join('|')})/)`,
 		message: 'Reach another folder through #lib/, so the import says where it goes.'
 	}
 };
@@ -238,6 +240,14 @@ export default defineConfig(
 		// A screen is handed its links already resolved, by the route that owns them.
 		files: ['src/lib/**/*.svelte'],
 		rules: { 'svelte/no-navigation-without-resolve': 'off' }
+	},
+	{
+		// A route is wiring: it is handed the app that `src/lib/app` built,
+		// and picks no adapter of its own.
+		files: ['src/routes/**'],
+		rules: {
+			'no-restricted-imports': ['error', { patterns: [FORBIDDEN.adapters, FORBIDDEN.vendors] }]
+		}
 	},
 	...boundaries
 );
