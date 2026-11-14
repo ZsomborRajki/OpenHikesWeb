@@ -1,0 +1,120 @@
+/*
+ * Design tokens: every color, size and timing the app draws with.
+ *
+ * A component names a token, never a value, so the look changes here and
+ * only here. The palette is the iOS app's: its accent green, and the
+ * system's label, fill and material colors in light and dark.
+ */
+
+:root {
+	color-scheme: light dark;
+
+	/* San Francisco where the system has it. The font cannot be served to anyone else. */
+	--font:
+		-apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+	/* Sizes in rem, so the browser's text size setting scales them, as Dynamic Type would. */
+	--text-large-title: 700 1.75rem/1.15 var(--font);
+	--text-headline: 600 1.0625rem/1.3 var(--font);
+	--text-body: 400 1.0625rem/1.35 var(--font);
+	--text-subheadline: 400 0.9375rem/1.35 var(--font);
+	--text-footnote: 400 0.8125rem/1.35 var(--font);
+	--text-caption: 500 0.75rem/1.3 var(--font);
+
+	--accent: #1b7f3b;
+	--on-accent: #fff;
+	--destructive: #d70015;
+
+	--label: #000;
+
+	/* Stronger than iOS's 60%, which falls short of WCAG AA at these sizes. */
+	--secondary-label: rgb(60 60 67 / 76%);
+	--separator: rgb(60 60 67 / 18%);
+	--fill: rgb(120 120 128 / 14%);
+	--fill-pressed: rgb(120 120 128 / 26%);
+	--group: rgb(255 255 255 / 74%);
+
+	/* The panel's glass: translucent, blurred by whoever uses it. */
+	--material: rgb(246 246 248 / 80%);
+	--material-edge: rgb(255 255 255 / 55%);
+	--material-blur: blur(28px) saturate(1.8);
+	--shadow: 0 12px 44px rgb(0 0 0 / 16%), 0 0 0 0.5px rgb(0 0 0 / 12%);
+
+	/* The map's own colors. Both map adapters read these. */
+	--route-color: var(--accent);
+	--on-route-color: var(--on-accent);
+	--route-casing-color: #fff;
+	--sketch-ground: #eef0ea;
+	--sketch-rule: rgb(0 0 0 / 5%);
+
+	/* A pin and the scrub's dot: ringed in white and lifted off the map, on any map. */
+	--pin-edge: #fff;
+	--pin-shadow: 0 1px 4px rgb(0 0 0 / 40%);
+
+	/* What dims the page behind an alert. */
+	--scrim: rgb(0 0 0 / 30%);
+
+	--radius-panel: 28px;
+	--radius-group: 16px;
+	--radius-control: 12px;
+
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+
+	/* The smallest thing a finger is asked to hit. */
+	--tap-target: 44px;
+
+	--ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+	--duration-quick: 160ms;
+	--duration-settle: 420ms;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--accent: #44ee6e;
+		--on-accent: #04210d;
+		--destructive: #ff6961;
+
+		--label: #fff;
+		--secondary-label: rgb(235 235 245 / 72%);
+		--separator: rgb(84 84 88 / 60%);
+		--fill: rgb(120 120 128 / 28%);
+		--fill-pressed: rgb(120 120 128 / 42%);
+		--group: rgb(255 255 255 / 8%);
+
+		--material: rgb(30 30 32 / 78%);
+		--material-edge: rgb(255 255 255 / 12%);
+		--shadow: 0 12px 44px rgb(0 0 0 / 50%), 0 0 0 0.5px rgb(255 255 255 / 10%);
+
+		--route-casing-color: #101210;
+		--sketch-ground: #1b1d1a;
+		--sketch-rule: rgb(255 255 255 / 5%);
+
+		--scrim: rgb(0 0 0 / 50%);
+	}
+}
+
+/* Someone who asked for less transparency gets none. */
+@media (prefers-reduced-transparency: reduce) {
+	:root {
+		--material: #f6f6f8;
+		--material-blur: none;
+	}
+}
+
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
+	:root {
+		--material: #1e1e20;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--duration-quick: 0ms;
+		--duration-settle: 0ms;
+	}
+}

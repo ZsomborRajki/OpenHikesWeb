@@ -1,0 +1,10 @@
+/* The dot a scrub moves along the route. 22px across, border included. */
+.mapkit-highlight {
+	box-sizing: content-box;
+	width: 16px;
+	height: 16px;
+	border: 3px solid var(--pin-edge);
+	border-radius: 50%;
+	background: var(--route-color);
+	box-shadow: var(--pin-shadow);
+}
