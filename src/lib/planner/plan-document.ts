@@ -31,6 +31,11 @@ export function encodePlan({ title, stops }: Plan): string {
 	});
 }
 
+/** Whether two plans draw the same trail under the same name: whether they encode alike. */
+export function isSamePlan(one: Plan, other: Plan): boolean {
+	return encodePlan(one) === encodePlan(other);
+}
+
 /** The plan in `text`, or `null` when it is not a plan of this version. */
 export function decodePlan(text: string): Plan | null {
 	let document: unknown;

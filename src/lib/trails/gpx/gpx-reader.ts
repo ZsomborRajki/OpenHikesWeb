@@ -38,35 +38,40 @@ export function readGpx(xml: string): GpxReading {
 	return { ok: true, track: { name: nameOf(document), route } };
 }
 
-/** Every `pointName` point, with a break wherever a new `runName` element begins. */
+/**
+ * Every `pointName` point, with a break wherever a new `runName` element
+ * begins. Points are added one at a time: a recording is longer than the
+ * arguments one call can take, so a run is never spread into a `push`.
+ */
 function lineOf(document: Document, runName: string, pointName: string): RoutePoint[] {
 	const line: RoutePoint[] = [];
 	for (const run of document.getElementsByTagNameNS(ANY_NAMESPACE, runName)) {
-		const points = [...run.getElementsByTagNameNS(ANY_NAMESPACE, pointName)].flatMap(routePoint);
-		const [first, ...rest] = points;
-		if (first === undefined) continue;
-		line.push(line.length > 0 ? { ...first, startsSegment: true } : first, ...rest);
+		let startsRun = true;
+		for (const element of run.getElementsByTagNameNS(ANY_NAMESPACE, pointName)) {
+			const point = routePoint(element);
+			if (point === null) continue;
+			line.push(startsRun && line.length > 0 ? { ...point, startsSegment: true } : point);
+			startsRun = false;
+		}
 	}
 	return line;
 }
 
-/** The point an element describes, or nothing when its coordinate is not one. */
-function routePoint(element: Element): RoutePoint[] {
+/** The point an element describes, or `null` when its coordinate is not one. */
+function routePoint(element: Element): RoutePoint | null {
 	const latitude = numberIn(element.getAttribute('lat'));
 	const longitude = numberIn(element.getAttribute('lon'));
 	if (latitude === undefined || longitude === undefined || !isCoordinate(latitude, longitude)) {
-		return [];
+		return null;
 	}
 	const elevation = numberIn(childText(element, 'ele'));
 	const time = Date.parse(childText(element, 'time') ?? '');
-	return [
-		{
-			latitude,
-			longitude,
-			...(elevation === undefined ? {} : { elevation }),
-			...(Number.isFinite(time) ? { time } : {})
-		}
-	];
+	return {
+		latitude,
+		longitude,
+		...(elevation === undefined ? {} : { elevation }),
+		...(Number.isFinite(time) ? { time } : {})
+	};
 }
 
 function nameOf(document: Document): string | null {

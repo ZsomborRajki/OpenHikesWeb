@@ -26,17 +26,10 @@
 
 	async function save(): Promise<void> {
 		isSaving = true;
-		const trail = await library.addPlanned({
-			title: draft.title,
-			stops: draft.plan.stops,
-			route: draft.line
-		});
+		const trail = await draft.saveTo(library);
 		isSaving = false;
 		hasSaveFailed = trail === null;
-		if (trail === null) return;
-
-		draft.clear();
-		await goto(resolve('/trails/[id]', { id: trail.id }));
+		if (trail !== null) await goto(resolve('/trails/[id]', { id: trail.id }));
 	}
 </script>
 

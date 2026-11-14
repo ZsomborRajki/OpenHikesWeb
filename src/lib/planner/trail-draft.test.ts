@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { distanceMeters, type Coordinate } from '#lib/general/geodesy.ts';
+import { InMemoryTrailRepository } from '#lib/trails/adapters/in-memory-trail-repository.ts';
+import type { Trail } from '#lib/trails/trail.ts';
+import { TrailLibrary } from '#lib/trails/trail-library.svelte.ts';
+import type { TrailRepository } from '#lib/trails/trail-repository.ts';
 import { DirectLegRouter } from './adapters/direct-leg-router.ts';
 import { InMemoryDraftStore } from './adapters/in-memory-draft-store.ts';
 import type { DraftStore } from './draft-store.ts';
@@ -44,12 +48,40 @@ class ScriptedLegRouter implements LegRouter {
 	}
 }
 
+/**
+ * A repository that holds its saves until the test lets them through, as a
+ * store busy with another write makes them wait.
+ */
+class HeldTrailRepository extends InMemoryTrailRepository {
+	readonly #held = Promise.withResolvers<undefined>();
+
+	override async save(trail: Trail): Promise<void> {
+		await this.#held.promise;
+		await super.save(trail);
+	}
+
+	letThrough(): void {
+		this.#held.resolve(undefined);
+	}
+}
+
+/** A store that takes nothing in: a browser with its storage full or switched off. */
+const REFUSING_REPOSITORY: TrailRepository = {
+	all: () => Promise.resolve([]),
+	save: () => Promise.reject(new Error('refused')),
+	remove: () => Promise.resolve()
+};
+
 function draftWith({
 	router = new DirectLegRouter(),
 	store = new InMemoryDraftStore()
 }: { router?: LegRouter; store?: DraftStore } = {}): TrailDraft {
 	let ids = 0;
 	return new TrailDraft({ router, store, newId: () => `stop-${String((ids += 1))}` });
+}
+
+function libraryOver(repository: TrailRepository): TrailLibrary {
+	return new TrailLibrary({ repository, newId: () => 'trail-1', now: () => 0 });
 }
 
 describe('TrailDraft', () => {
@@ -152,6 +184,68 @@ describe('TrailDraft', () => {
 		expect(draft.title).toBe('');
 		expect(draft.line).toEqual([]);
 		expect(store.load()).toBeNull();
+	});
+
+	it('saves the drawing to the library as a trail, and starts over', async () => {
+		const store = new InMemoryDraftStore();
+		const draft = draftWith({ store });
+		draft.rename('Ridge Walk');
+		draft.addStop(A);
+		draft.addStop(B);
+
+		const trail = await draft.saveTo(libraryOver(new InMemoryTrailRepository()));
+
+		expect(trail).toMatchObject({ title: 'Ridge Walk', stops: [A, B], route: [A, B] });
+		expect(draft.title).toBe('');
+		expect(draft.stops).toEqual([]);
+		expect(store.load()).toBeNull();
+	});
+
+	it('keeps a drawing the library could not store', async () => {
+		const store = new InMemoryDraftStore();
+		const draft = draftWith({ store });
+		draft.addStop(A);
+		draft.addStop(B);
+
+		const trail = await draft.saveTo(libraryOver(REFUSING_REPOSITORY));
+
+		expect(trail).toBeNull();
+		expect(draft.line).toEqual([A, B]);
+		expect(store.load()).toEqual({ title: '', stops: [A, B] });
+	});
+
+	it('keeps what is drawn while a save is on its way', async () => {
+		const repository = new HeldTrailRepository();
+		const store = new InMemoryDraftStore();
+		const draft = draftWith({ store });
+		draft.addStop(A);
+		draft.addStop(B);
+
+		const saving = draft.saveTo(libraryOver(repository));
+		draft.addStop(C);
+		draft.rename('Longer Walk');
+		repository.letThrough();
+		const trail = await saving;
+
+		expect(trail?.stops).toEqual([A, B]);
+		expect(draft.title).toBe('Longer Walk');
+		expect(draft.line).toEqual([A, B, C]);
+		expect(store.load()).toEqual({ title: 'Longer Walk', stops: [A, B, C] });
+	});
+
+	it('starts over after a save that the drawing came through unchanged', async () => {
+		const repository = new HeldTrailRepository();
+		const draft = draftWith();
+		draft.addStop(A);
+		draft.addStop(B);
+
+		const saving = draft.saveTo(libraryOver(repository));
+		draft.addStop(C);
+		draft.removeStop('stop-3');
+		repository.letThrough();
+		await saving;
+
+		expect(draft.stops).toEqual([]);
 	});
 
 	it('draws a leg straight until its route arrives, then along the route', async () => {

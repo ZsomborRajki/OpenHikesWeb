@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { decodePlan, encodePlan, PLAN_FORMAT, PLAN_VERSION, type Plan } from './plan-document.ts';
+import {
+	decodePlan,
+	encodePlan,
+	isSamePlan,
+	PLAN_FORMAT,
+	PLAN_VERSION,
+	type Plan
+} from './plan-document.ts';
 
 const PLAN: Plan = {
 	title: 'Hochstaufen Traverse',
@@ -34,6 +41,18 @@ describe('plan document', () => {
 			title: 'Just a name',
 			stops: []
 		});
+	});
+
+	it('takes two plans for the same when their names and their stops are', () => {
+		const [first, second] = PLAN.stops;
+		if (first === undefined || second === undefined) throw new Error('The plan has two stops.');
+
+		expect(isSamePlan(PLAN, { title: PLAN.title, stops: [{ ...first }, { ...second }] })).toBe(
+			true
+		);
+		expect(isSamePlan(PLAN, { ...PLAN, title: 'Renamed' })).toBe(false);
+		expect(isSamePlan(PLAN, { ...PLAN, stops: [second, first] })).toBe(false);
+		expect(isSamePlan(PLAN, { ...PLAN, stops: [first] })).toBe(false);
 	});
 
 	it.each([
