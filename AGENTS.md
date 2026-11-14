@@ -111,7 +111,7 @@ may depend on:
 | Component   | `*.svelte`      | What is drawn. Takes props, reports through callbacks | Adapters, the router                                      |
 | Adapter     | `adapters/*.ts` | The one user of a vendor library or a browser store   | Models, components                                        |
 | Composition | `app/*.ts`      | Builds the models from their adapters, once           | Components                                                |
-| Route       | `src/routes/**` | Hands a screen its model, its links and its callbacks | —                                                         |
+| Route       | `src/routes/**` | Hands a screen its model, its links and its callbacks | Adapters                                                  |
 
 - **A domain module is handed what it needs.** No `window`, no `fetch`, no
   `Date.now()`, no `crypto`. The time and new ids arrive as `Now` and `NewId`
