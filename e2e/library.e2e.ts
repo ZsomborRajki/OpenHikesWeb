@@ -10,6 +10,19 @@ test.describe('the library', () => {
 		await expect(page.getByText('Plan a trail on the map, or import a GPX file.')).toBeVisible();
 	});
 
+	test('names the page for the screen on show, which a screen reader hears on arrival', async ({
+		page
+	}) => {
+		await openThumseeLoop(page);
+		await expect(page).toHaveTitle('Thumsee Loop · OpenHikes');
+
+		await page.getByRole('link', { name: 'Trails' }).click();
+		await expect(page).toHaveTitle('Trails · OpenHikes');
+
+		await page.getByRole('link', { name: 'Plan a Trail' }).click();
+		await expect(page).toHaveTitle('Plan a Trail · OpenHikes');
+	});
+
 	test('imports a GPX file and shows what the trail adds up to', async ({ page }) => {
 		await openThumseeLoop(page);
 
@@ -68,6 +81,20 @@ test.describe('the library', () => {
 		await chart.blur();
 
 		await expect(highlight(page)).toBeHidden();
+	});
+
+	test('steps along the trail by the up and down arrows too, as a slider does', async ({
+		page
+	}) => {
+		await openThumseeLoop(page);
+		const chart = page.getByRole('slider', { name: 'Position along the trail' });
+		await chart.focus();
+
+		await chart.press('ArrowUp');
+		await expect(chart).toHaveAttribute('aria-valuenow', '108');
+
+		await chart.press('ArrowDown');
+		await expect(chart).toHaveAttribute('aria-valuenow', '0');
 	});
 
 	test('exports a trail as a GPX file', async ({ page }) => {

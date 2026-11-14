@@ -1,4 +1,10 @@
-<!-- The top of a screen: the way back, and a large title. -->
+<!--
+	The top of a screen: the way back, and a large title.
+
+	The title names the page as well. Every screen is one page to the browser,
+	and a page's name is what a tab and a history entry show, and what a
+	screen reader is told when a link has taken it somewhere new.
+-->
 <script lang="ts">
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 
@@ -11,6 +17,10 @@
 
 	let { title, subtitle, back }: Props = $props();
 </script>
+
+<svelte:head>
+	<title>{title} · OpenHikes</title>
+</svelte:head>
 
 <header class="header">
 	{#if back}
