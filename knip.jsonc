@@ -1,0 +1,32 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+
+	// Where the app starts, beyond what Knip finds by itself. `src/env.ts` is
+	// SvelteKit's own entry, newer than Knip's plugin. The suites and the
+	// Playwright config are listed because Knip cannot load the two
+	// TypeScript configs to ask them: its loader does not follow
+	// `$app/tsconfig`, the base config SvelteKit generates. Listed here, the
+	// files are read without being run.
+	"entry": ["src/env.ts", "src/**/*.test.ts", "e2e/**/*.e2e.ts", "playwright.config.ts"],
+	"vite": { "config": [] },
+	"vitest": { "config": [] },
+	"playwright": { "config": [] },
+
+	// Knip takes a module imported through `#lib/` for a public entry point,
+	// and would report no unused export in it. Nothing here is public: an
+	// export that nothing imports is unused wherever it is.
+	"includeEntryExports": true,
+
+	// An import cycle fails `knip --cycles`, which is a run of its own:
+	// asking Knip for cycles asks it for nothing else.
+	"rules": { "cycles": "error" },
+
+	"ignoreIssues": {
+		// The two exports a tool reads and no module imports.
+		"src/env.ts": ["exports"],
+		"playwright.config.ts": ["exports"],
+		// `tsconfig.json` extends `$app/tsconfig`, which SvelteKit writes into
+		// `node_modules` itself. It is in no package.json, and is not missing.
+		"tsconfig.json": ["unlisted"]
+	}
+}

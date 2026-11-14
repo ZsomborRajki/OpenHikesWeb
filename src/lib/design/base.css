@@ -1,0 +1,72 @@
+/* The page under every component: a reset, and the defaults they inherit. */
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+
+	/* The app is one window-sized map. Panels scroll; the page never does. */
+	overflow: hidden;
+}
+
+body {
+	background: var(--sketch-ground);
+	color: var(--label);
+	font: var(--text-body);
+	-webkit-font-smoothing: antialiased;
+
+	/* stylelint-disable-next-line property-no-vendor-prefix -- the name iPhone Safari answers to */
+	-webkit-text-size-adjust: 100%;
+	text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd {
+	margin: 0;
+	padding: 0;
+}
+
+ul,
+ol {
+	list-style: none;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+button,
+input {
+	color: inherit;
+	font: inherit;
+}
+
+button {
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+	cursor: default;
+}
+
+:focus-visible {
+	outline: 3px solid var(--accent);
+	outline-offset: 2px;
+}
