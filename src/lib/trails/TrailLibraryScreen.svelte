@@ -27,6 +27,7 @@
 	let { trails, status, planHref, trailHref, onImport, importProblem }: Props = $props();
 
 	const IMPORT_PROBLEMS: Readonly<Record<ImportProblem, string>> = {
+		notOpened: 'That file could not be opened.',
 		unreadable: 'That file is not a GPX file.',
 		empty: 'That GPX file has no track in it.',
 		notStored: 'The trail could not be stored in this browser.'
