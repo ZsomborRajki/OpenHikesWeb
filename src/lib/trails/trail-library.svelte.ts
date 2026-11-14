@@ -17,8 +17,14 @@ import type { TrailRepository } from './trail-repository.ts';
 /** `unavailable` when the browser would not hand over its storage. */
 export type LibraryStatus = 'loading' | 'ready' | 'unavailable';
 
-/** Why a file did not become a trail: the file itself, or the store. */
-export type ImportProblem = GpxProblem | 'notStored';
+/** Why a file did not become a trail: the browser could not open it, the file itself, or the store. */
+export type ImportProblem = 'notOpened' | GpxProblem | 'notStored';
+
+/** A file the visitor picked: its name, and its text once it has been read. A browser's `File` is one. */
+export interface PickedFile {
+	readonly name: string;
+	text(): Promise<string>;
+}
 
 export type GpxImport =
 	| { readonly ok: true; readonly trail: Trail }
@@ -79,10 +85,17 @@ export class TrailLibrary {
 	}
 
 	/** Adds the trail in a GPX file, named for its track or else for the file. */
-	async importGpx(fileName: string, xml: string): Promise<GpxImport> {
+	async importGpx(file: PickedFile): Promise<GpxImport> {
+		let xml: string;
+		try {
+			xml = await file.text();
+		} catch {
+			// Picked and then out of reach: moved, deleted, or on a drive that has gone offline.
+			return { ok: false, problem: 'notOpened' };
+		}
 		const reading = readGpx(xml);
 		if (!reading.ok) return reading;
-		const title = boundedTitle(reading.track.name ?? fileStem(fileName), IMPORTED_TITLE_FALLBACK);
+		const title = boundedTitle(reading.track.name ?? fileStem(file.name), IMPORTED_TITLE_FALLBACK);
 		const trail = await this.#add({ title, route: reading.track.route });
 		return trail === null ? { ok: false, problem: 'notStored' } : { ok: true, trail };
 	}

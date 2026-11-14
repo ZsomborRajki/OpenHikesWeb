@@ -16,7 +16,7 @@
 	});
 
 	async function importGpx(file: File): Promise<void> {
-		const outcome = await library.importGpx(file.name, await file.text());
+		const outcome = await library.importGpx(file);
 		importProblem = outcome.ok ? null : outcome.problem;
 		if (outcome.ok) await goto(resolve('/trails/[id]', { id: outcome.trail.id }));
 	}

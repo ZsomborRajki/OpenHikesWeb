@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { InMemoryTrailRepository } from './adapters/in-memory-trail-repository.ts';
 import { aTrail } from './trail.fixtures.ts';
-import { TrailLibrary } from './trail-library.svelte.ts';
+import { TrailLibrary, type PickedFile } from './trail-library.svelte.ts';
 import type { TrailRepository } from './trail-repository.ts';
 
 const NOW = 1_781_249_400_000;
@@ -17,6 +17,11 @@ const REFUSING_REPOSITORY: TrailRepository = {
 	save: () => Promise.reject(new Error('refused')),
 	remove: () => Promise.reject(new Error('refused'))
 };
+
+/** A file as the browser hands one over once it is picked. */
+function fileOf(name: string, xml: string): PickedFile {
+	return { name, text: () => Promise.resolve(xml) };
+}
 
 function libraryOver(repository: TrailRepository): TrailLibrary {
 	let ids = 0;
@@ -67,7 +72,7 @@ describe('TrailLibrary', () => {
 		const library = libraryOver(repository);
 		await library.load();
 
-		const outcome = await library.importGpx('download.gpx', GPX);
+		const outcome = await library.importGpx(fileOf('download.gpx', GPX));
 
 		const imported = {
 			id: 'id-1',
@@ -90,7 +95,7 @@ describe('TrailLibrary', () => {
 	])('names an unnamed track from the file %s', async (fileName, title) => {
 		const library = libraryOver(new InMemoryTrailRepository());
 
-		const outcome = await library.importGpx(fileName, UNNAMED_GPX);
+		const outcome = await library.importGpx(fileOf(fileName, UNNAMED_GPX));
 
 		expect(outcome.ok && outcome.trail.title).toBe(title);
 	});
@@ -98,16 +103,29 @@ describe('TrailLibrary', () => {
 	it('says why a file is not a trail, and adds nothing', async () => {
 		const library = libraryOver(new InMemoryTrailRepository());
 
-		const outcome = await library.importGpx('notes.txt', 'not a track');
+		const outcome = await library.importGpx(fileOf('notes.txt', 'not a track'));
 
 		expect(outcome).toEqual({ ok: false, problem: 'unreadable' });
+		expect(library.trails).toEqual([]);
+	});
+
+	it('says so when the browser cannot open the file, and adds nothing', async () => {
+		const library = libraryOver(new InMemoryTrailRepository());
+		const gone: PickedFile = {
+			name: 'gone.gpx',
+			text: () => Promise.reject(new Error('The file is out of reach.'))
+		};
+
+		const outcome = await library.importGpx(gone);
+
+		expect(outcome).toEqual({ ok: false, problem: 'notOpened' });
 		expect(library.trails).toEqual([]);
 	});
 
 	it('lists nothing the store refused', async () => {
 		const library = libraryOver(REFUSING_REPOSITORY);
 
-		const outcome = await library.importGpx('download.gpx', GPX);
+		const outcome = await library.importGpx(fileOf('download.gpx', GPX));
 
 		expect(outcome).toEqual({ ok: false, problem: 'notStored' });
 		expect(library.trails).toEqual([]);
