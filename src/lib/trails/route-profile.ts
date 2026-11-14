@@ -18,7 +18,13 @@ export interface ProfileSample {
 }
 
 export interface RouteProfile {
-	/** The points that carry a height, in route order. Never fewer than two. */
+	/**
+	 * Every point of the route from the first that carries a height to the
+	 * last, in route order. Never fewer than two. A point between them with
+	 * no height of its own is kept, at the height the line between its
+	 * neighbors has there: it is still a bend in the route, and a scrub that
+	 * cut the corner would put the dot where the trail is not.
+	 */
 	readonly samples: readonly ProfileSample[];
 	readonly startMeters: number;
 	readonly endMeters: number;
@@ -26,32 +32,53 @@ export interface RouteProfile {
 	readonly maximumMeters: number;
 }
 
+/** A point of the route by its distance along it, with the height its source gave it, if any. */
+interface Place {
+	readonly distanceMeters: number;
+	readonly elevationMeters: number | undefined;
+	readonly coordinate: Coordinate;
+}
+
 /** The profile of `route`, or `null` when fewer than two of its points carry a height. */
 export function routeProfile(route: readonly RoutePoint[]): RouteProfile | null {
 	const samples: ProfileSample[] = [];
-	let traveled = 0;
-	let previous: RoutePoint | null = null;
-	for (const point of route) {
-		if (previous !== null) traveled += legMeters(previous, point);
-		previous = point;
-		if (point.elevation === undefined || !Number.isFinite(point.elevation)) continue;
-		samples.push({
-			distanceMeters: traveled,
-			elevationMeters: point.elevation,
-			coordinate: { latitude: point.latitude, longitude: point.longitude }
-		});
+	/** The points since the last height. The next height says what theirs are. */
+	let waiting: Place[] = [];
+	// Kept as the heights go by: a recording has more of them than `Math.min` takes arguments.
+	let minimumMeters = Infinity;
+	let maximumMeters = -Infinity;
+	for (const place of placesAlong(route)) {
+		const { elevationMeters } = place;
+		const before = samples.at(-1);
+		if (elevationMeters === undefined) {
+			// Ahead of the first height there is no line to take one from.
+			if (before !== undefined) waiting.push(place);
+			continue;
+		}
+
+		const sample = { ...place, elevationMeters };
+		if (before !== undefined) {
+			for (const between of waiting) {
+				const fraction = fractionBetween(before, sample, between.distanceMeters);
+				const height = mix(before.elevationMeters, elevationMeters, fraction);
+				samples.push({ ...between, elevationMeters: height });
+			}
+		}
+		waiting = [];
+		samples.push(sample);
+		minimumMeters = Math.min(minimumMeters, elevationMeters);
+		maximumMeters = Math.max(maximumMeters, elevationMeters);
 	}
 
 	const first = samples.at(0);
 	const last = samples.at(-1);
 	if (first === undefined || last === undefined || samples.length < 2) return null;
-	const heights = samples.map((sample) => sample.elevationMeters);
 	return {
 		samples,
 		startMeters: first.distanceMeters,
 		endMeters: last.distanceMeters,
-		minimumMeters: Math.min(...heights),
-		maximumMeters: Math.max(...heights)
+		minimumMeters,
+		maximumMeters
 	};
 }
 
@@ -69,8 +96,7 @@ export function sampleAt(profile: RouteProfile, distanceMeters: number): Profile
 		return end;
 	}
 
-	const span = after.distanceMeters - before.distanceMeters;
-	const fraction = span === 0 ? 0 : (distanceMeters - before.distanceMeters) / span;
+	const fraction = fractionBetween(before, after, distanceMeters);
 	return {
 		distanceMeters,
 		elevationMeters: mix(before.elevationMeters, after.elevationMeters, fraction),
@@ -79,6 +105,35 @@ export function sampleAt(profile: RouteProfile, distanceMeters: number): Profile
 			longitude: mix(before.coordinate.longitude, after.coordinate.longitude, fraction)
 		}
 	};
+}
+
+/** Every point of `route`, with how far along the route it is. */
+function* placesAlong(route: readonly RoutePoint[]): Generator<Place> {
+	let traveled = 0;
+	let previous: RoutePoint | null = null;
+	for (const point of route) {
+		if (previous !== null) traveled += legMeters(previous, point);
+		previous = point;
+		const { latitude, longitude, elevation } = point;
+		yield {
+			distanceMeters: traveled,
+			elevationMeters: Number.isFinite(elevation) ? elevation : undefined,
+			coordinate: { latitude, longitude }
+		};
+	}
+}
+
+/**
+ * How far `distanceMeters` is on the way from `before` to `after`, from 0 to
+ * 1. Two samples at one distance have no way between them.
+ */
+function fractionBetween(
+	before: ProfileSample,
+	after: ProfileSample,
+	distanceMeters: number
+): number {
+	const span = after.distanceMeters - before.distanceMeters;
+	return span === 0 ? 0 : (distanceMeters - before.distanceMeters) / span;
 }
 
 /** The index of the first sample at or past `distanceMeters`, by bisection. */

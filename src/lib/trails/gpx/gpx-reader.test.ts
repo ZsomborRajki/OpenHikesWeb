@@ -2,6 +2,12 @@
 import { describe, expect, it } from 'vitest';
 import { readGpx, type GpxTrack } from './gpx-reader.ts';
 
+/**
+ * More points than an engine lets one call take as arguments: about 125,000
+ * in V8. A day's recording at a point a second is longer than that.
+ */
+const LONG_RECORDING_POINTS = 150_000;
+
 function gpx(body: string): string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="A Suite" xmlns="http://www.topografix.com/GPX/1/1">${body}</gpx>`;
@@ -80,6 +86,14 @@ describe('readGpx', () => {
 		);
 
 		expect(track.route).toEqual([{ latitude: 1, longitude: 1 }]);
+	});
+
+	it('reads a segment of more points than a function takes arguments', () => {
+		const points = '<trkpt lat="1" lon="1"/>'.repeat(LONG_RECORDING_POINTS);
+
+		const track = trackIn(gpx(`<trk><trkseg>${points}</trkseg></trk>`));
+
+		expect(track.route).toHaveLength(LONG_RECORDING_POINTS);
 	});
 
 	it('reads a route when the file has no track', () => {

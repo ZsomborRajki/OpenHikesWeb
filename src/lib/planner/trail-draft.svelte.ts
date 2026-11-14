@@ -9,11 +9,13 @@
 import { SvelteMap } from 'svelte/reactivity';
 import type { NewId } from '#lib/general/ambient.ts';
 import { pathLengthMeters, type Coordinate } from '#lib/general/geodesy.ts';
+import type { Trail } from '#lib/trails/trail.ts';
+import type { TrailLibrary } from '#lib/trails/trail-library.svelte.ts';
 import { legsBetween, lineThrough, type Leg } from './draft-legs.ts';
 import { MINIMUM_STOPS, withStopMoved, withoutStop, type DraftStop } from './draft-stops.ts';
 import type { DraftStore } from './draft-store.ts';
 import type { LegRouter } from './leg-router.ts';
-import type { Plan } from './plan-document.ts';
+import { isSamePlan, type Plan } from './plan-document.ts';
 
 export interface TrailDraftDependencies {
 	readonly router: LegRouter;
@@ -87,6 +89,23 @@ export class TrailDraft {
 		this.#stops = [];
 		this.#legPaths.clear();
 		this.#store.clear();
+	}
+
+	/**
+	 * Saves the drawing to `library` as a trail, and starts over once it is
+	 * kept. Answers with the trail, or with `null` when the library could not
+	 * store it, and then the drawing stays as it is.
+	 *
+	 * A store can take its time, and the planner is live while it does. A
+	 * drawing that has changed by the time the trail is kept is no longer the
+	 * one that was saved, so it stays too: starting over would throw away
+	 * every stop added since.
+	 */
+	async saveTo(library: TrailLibrary): Promise<Trail | null> {
+		const saved = this.plan;
+		const trail = await library.addPlanned({ ...saved, route: this.line });
+		if (trail !== null && isSamePlan(this.plan, saved)) this.clear();
+		return trail;
 	}
 
 	#replaceStops(stops: readonly DraftStop[]): void {
