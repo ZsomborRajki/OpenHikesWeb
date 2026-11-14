@@ -206,6 +206,9 @@ highlight (`MapScene.highlight`).
 - A glyph-only button is an `IconButton`, which requires a label and is a full
   tap target.
 - A composite row is one link with one name (`TrailRow`).
+- A screen names its page. `ScreenHeader` writes its title into the page's,
+  which is what a screen reader is told after a link, and what a tab and a
+  history entry show.
 - Whatever a pointer can do to a custom control, the keyboard can too: the
   elevation chart is a slider, and the sheet's grabber is a button.
 - Honor `prefers-reduced-motion`, `prefers-reduced-transparency` and

@@ -55,9 +55,13 @@
 
 	function scrubByKey(event: KeyboardEvent): void {
 		const from = scrubbed?.distanceMeters ?? profile.startMeters;
+		const step = length * KEY_STEP;
+		// The keys a slider answers to: up is further along, as right is.
 		const destinations: Record<string, number> = {
-			ArrowRight: from + length * KEY_STEP,
-			ArrowLeft: from - length * KEY_STEP,
+			ArrowRight: from + step,
+			ArrowUp: from + step,
+			ArrowLeft: from - step,
+			ArrowDown: from - step,
 			Home: profile.startMeters,
 			End: profile.endMeters
 		};
