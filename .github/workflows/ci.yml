@@ -14,8 +14,8 @@ concurrency:
 permissions:
   contents: read
 
-# Every step below is a package script, so a job is what `npm run <name>` is
-# on a laptop, and `npm run verify` is all three jobs in one.
+# Every check below is a package script, so a job is what `npm run <name>` is
+# on a laptop, and `npm run verify` is the three checking jobs in one.
 jobs:
   static:
     name: Static analysis
@@ -72,3 +72,36 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  # openhikes.app is main as it last passed every job above. The only job
+  # that sees a secret, and never on a pull request.
+  deploy:
+    name: Deploy
+    needs: [static, unit, browser]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+      url: https://openhikes.app
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Without a token the build falls back to the sketch map, which nobody
+      # would notice in a passing run.
+      - name: Require the map token
+        run: test -n "$MAPKIT_TOKEN" || { echo "::error::The MAPKIT_TOKEN secret is not set."; exit 1; }
+        env:
+          MAPKIT_TOKEN: ${{ secrets.MAPKIT_TOKEN }}
+      - run: npm run build
+        env:
+          MAPKIT_TOKEN: ${{ secrets.MAPKIT_TOKEN }}
+      # wrangler.jsonc says what is uploaded and where it is served.
+      - run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

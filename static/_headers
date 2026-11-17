@@ -1,0 +1,5 @@
+# Read by Cloudflare, which serves the build. A file under /_app/immutable/
+# is named for its contents, so a new build gives it a new name and a
+# browser can keep the old one for good.
+/_app/immutable/*
+  Cache-Control: public, max-age=31536000, immutable

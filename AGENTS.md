@@ -45,8 +45,14 @@ npm run verify          # lint, check, analyze, test:unit and test:e2e
   browser tests to a file and a window size.
 - `npx playwright install chromium` once, before the first browser run.
 - CI (`.github/workflows/ci.yml`) runs `lint`, `check`, `analyze`,
-  `test:unit` and `test:e2e`. It has no token, so `test:e2e:live` is a local
-  check: run it after changing `mapkit-map-surface.ts`.
+  `test:unit` and `test:e2e`. Its checks have no token, so `test:e2e:live` is
+  a local check: run it after changing `mapkit-map-surface.ts`.
+- **CI is the only deploy.** On a push to main that passes every check, its
+  `deploy` job builds with the production map token and runs `npm run deploy`,
+  which serves `build/` at openhikes.app as `wrangler.jsonc` says. It reads
+  three repository secrets: `MAPKIT_TOKEN`, restricted to openhikes.app;
+  `CLOUDFLARE_API_TOKEN`; and `CLOUDFLARE_ACCOUNT_ID`. A laptop's token is a
+  test token with no domain restriction, so a laptop never deploys.
 
 ### Static analysis
 
@@ -262,6 +268,9 @@ highlight (`MapScene.highlight`).
   file and about ten components, which is less to own than either dependency.
 - **A single-page app, with no server rendering.** There is a map and the
   browser's own storage, and nothing for a server to draw.
+- **Cloudflare serves it, as a Worker with only static assets.** The domain
+  is registered there, and Cloudflare starts new sites on Workers rather than
+  Pages. There is no Worker script, because there is nothing for one to do.
 - **npm.** It ships with Node, so there is nothing to install first.
 - **Trails live in the browser.** There is no account and no server. Reading
   the hiker's iCloud library is a separate decision, not a missing feature.

@@ -2,7 +2,7 @@
 
 The web companion of [OpenHikes](https://github.com/ZsomborRajki/OpenHikes), the
 iOS hiking app: plan a trail on the map and look over the ones you keep. It
-does not record.
+does not record. It runs at [openhikes.app](https://openhikes.app).
 
 - **Plan a trail.** Tap the map to add stops, reorder them, and save the line.
 - **Keep trails.** Import a GPX file, or save a plan. Trails stay in this browser.

@@ -1,0 +1,19 @@
+// The site on Cloudflare: a Worker with no script, only the static build.
+// Every route is drawn in the browser, so a path that names no file gets
+// `index.html`, the fallback `adapter-static` writes. CI deploys it from
+// main once every gate has passed; see AGENTS.md.
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "openhikes",
+	"compatibility_date": "2026-11-17",
+	"assets": {
+		"directory": "./build",
+		"not_found_handling": "single-page-application"
+	},
+	// Cloudflare writes the DNS record and the certificate for a custom domain.
+	"routes": [{ "pattern": "openhikes.app", "custom_domain": true }],
+	// The map token works on openhikes.app alone, so a workers.dev address
+	// would serve a map that refuses to load.
+	"workers_dev": false,
+	"preview_urls": false
+}
