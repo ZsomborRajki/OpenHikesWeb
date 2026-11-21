@@ -56,7 +56,7 @@
 	},
 	"dependencies": {
 		"@apple/mapkit-loader": "^1.0.0",
-		"@lucide/svelte": "^1.73.0",
+		"@lucide/svelte": "^1.75.0",
 		"idb": "^8.0.4"
 	}
 }
